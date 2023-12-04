@@ -4,11 +4,18 @@
 \alias{launchApp}
 \title{Launch a Shiny Application for Clinical Trials Query}
 \usage{
-launchApp()
+launchApp(con)
+}
+\arguments{
+\item{con}{A connection object to the DuckDB database.}
 }
 \description{
 This function creates and launches a Shiny application that allows users
 to interactively query and visualize clinical trials data. It establishes
 a connection to a DuckDB database, reads the data, and sets up a user
 interface for data exploration.
+}
+\examples{
+con <- dbConnect(duckdb(file.path("ctgov.duckdb"), read_only = TRUE))
+launchApp(con)
 }

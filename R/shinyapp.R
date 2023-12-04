@@ -5,6 +5,8 @@
 #' a connection to a DuckDB database, reads the data, and sets up a user
 #' interface for data exploration.
 #'
+#' @param con A connection object to the DuckDB database.
+#'
 #' @importFrom shiny shinyApp fluidPage titlePanel sidebarLayout sidebarPanel
 #'   mainPanel tabsetPanel tabPanel textInput selectInput plotOutput sliderInput
 #'   dataTableOutput renderPlot renderDataTable reactive
@@ -14,12 +16,12 @@
 #' @importFrom purrr map_dbl
 #' @importFrom duckdb duckdb
 #' @export
+#'
+#' @examples
+#' con <- dbConnect(duckdb(file.path("ctgov.duckdb"), read_only = TRUE))
+#' launchApp(con)
 
-launchApp <- function(){
-  con <- dbConnect(
-    duckdb(file.path("ctgov.duckdb"),
-           read_only = TRUE)
-  )
+launchApp <- function(con){
 
   if (length(dbListTables(con)) == 0) {
     stop("Problem reading from connection.")
