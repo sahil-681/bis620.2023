@@ -16,12 +16,11 @@
 #' @importFrom purrr map_dbl
 #' @importFrom duckdb duckdb
 #' @export
-#'
-#' @examples
-#' con <- dbConnect(duckdb(file.path("ctgov.duckdb"), read_only = TRUE))
-#' launchApp(con)
 
 launchApp <- function(con){
+
+  con <- dbConnect(duckdb(file.path("ctgov.duckdb"),
+                          read_only = TRUE))
 
   if (length(dbListTables(con)) == 0) {
     stop("Problem reading from connection.")
