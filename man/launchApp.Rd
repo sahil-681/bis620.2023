@@ -15,7 +15,3 @@ to interactively query and visualize clinical trials data. It establishes
 a connection to a DuckDB database, reads the data, and sets up a user
 interface for data exploration.
 }
-\examples{
-con <- dbConnect(duckdb(file.path("ctgov.duckdb"), read_only = TRUE))
-launchApp(con)
-}
