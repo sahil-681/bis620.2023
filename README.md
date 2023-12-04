@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/sahil-681/bis620.2023/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sahil/bis620.2023/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/sahil-681/bis620.2023/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sahil-681/bis620.2023/actions/workflows/R-CMD-check.yaml)
 [![test-coverage](https://github.com/sahil-681/bis620.2023/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/sahil-681/bis620.2023/actions/workflows/test-coverage.yaml)
 <!-- badges: end -->
 
