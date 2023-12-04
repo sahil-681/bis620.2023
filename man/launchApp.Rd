@@ -4,10 +4,7 @@
 \alias{launchApp}
 \title{Launch a Shiny Application for Clinical Trials Query}
 \usage{
-launchApp(con)
-}
-\arguments{
-\item{con}{A connection object to the DuckDB database.}
+launchApp()
 }
 \description{
 This function creates and launches a Shiny application that allows users
