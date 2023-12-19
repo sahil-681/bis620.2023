@@ -1,0 +1,164 @@
+---
+title: "Extended Abstract - BIS 620 Final Project"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Extended Abstract - BIS 620 Final Project}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, message=FALSE}
+suppressMessages({
+  library(haven)
+  library(purrr)
+  library(dplyr)
+  library(ggplot2)
+  library(gridExtra)
+  library(stringr)
+  library(tidyverse)
+  library(pubtheme)
+  library(bis620.2023)
+})
+```
+
+# Abstract
+
+This paper examines the potential relationships between biomarker mutations, demographic factors, and the incidence of adverse events in a clinical trial setting for cancer treatments. Utilizing data from clinical trials, we perform a series of statistical analyses to investigate these associations, aiming to inform personalized treatment strategies and improve patient outcomes.
+
+# Background and Motivation
+
+The landscape of cancer treatment has undergone a paradigm shift with the advent of personalized medicine, a therapeutic approach that considers individual variability in genes, environment, and lifestyle for each person. Traditional chemotherapy, which administers the same treatment regimen to all patients with a particular cancer type, is gradually being supplemented and sometimes replaced by treatments tailored to individual genetic profiles, a method known as precision oncology.
+
+Biomarkers have emerged as critical tools in this new era of medicine. They are biological molecules found in blood, other body fluids, or tissues that are a sign of a normal or abnormal process, or of a condition or disease. Biomarker mutations, such as those found in genes like KRAS, NRAS, and BRAF, can influence how a cancer behaves and how it will respond to specific treatments. 
+
+For example, the presence of a KRAS mutation in colorectal cancer is an indicator that the tumor will not respond to certain types of therapy. Thus, identifying and understanding these mutations is vital for selecting the most effective treatment strategy and for predicting treatment outcomes.
+
+Demographic factors such as age, gender, and race also play a significant role in the treatment of cancer. These factors can influence the pharmacodynamics and pharmacokinetics of drugs, leading to variations in treatment efficacy and the risk of adverse events. For instance, some adverse events may be more prevalent in a particular gender or age group. Recognizing these patterns is crucial for managing treatment side effects and improving patient quality of life.
+
+However, while the association between biomarker mutations and treatment response has been the subject of extensive research, there is a comparative lack of studies exploring the interplay between demographic factors and adverse events in cancer treatment. This gap in research is what our study aims to address.
+
+The motivation for our study stems from the need to optimize cancer treatment not only at the molecular level but also by considering the broader demographic context of the patient. By doing so, we aim to contribute to the development of treatment protocols that are sensitive to the demographic diversity of the patient population. Ultimately, this could lead to reduced treatment-related morbidity, improved patient well-being, and more efficient healthcare delivery.
+
+Our study is positioned at the intersection of genetic research and demographic analysis, encapsulating the multifaceted nature of cancer treatment. We attempt to shed light on how biomarker mutations and demographic factors together can inform treatment decisions, leading to a more nuanced understanding of patient care in oncology.
+
+# Research Questions
+
+The study focuses on two main research questions:
+
+- **Treatment Response:** Is there a significant difference in treatment response between subjects with different biomarker mutations (e.g., KRAS, NRAS, BRAF)?
+
+- **Adverse Events:** Are there specific demographic factors (e.g., age, gender, race) associated with a higher incidence of adverse events during treatment?
+
+# Data Cleaning and Exploration
+
+In this study, we utilized data from a comprehensive clinical trial dataset from The Datasphere  Initiative that included patient demographics, biomarker statuses, treatment responses, and adverse events records. The datasets were complex, with potential issues of missing values, inconsistencies, and the need for format standardization.
+
+The initial phase of data cleaning involved importing the datasets into R, an environment well-suited for handling and manipulating large-scale clinical data. The raw data files, provided in SAS format, were read using the `read_sas` function from the `haven` package. Ensuring compatibility with R’s data structures, each dataset was converted into a dataframe.
+
+We merged four key datasets: patient demographics (adsl), biomarker mutations (biomark), treatment responses (adrsp), and adverse events (adae). The merging process was done using the `merge` function in R, joining the datasets by the common identifier `SUBJID`, which ensured that each row of the resulting dataset corresponded to the same individual across all datasets.
+
+The merged datasets underwent a stringent process of cleaning. Rows with missing values in crucial variables were removed to prevent inaccuracies in the subsequent analysis. Specifically, for the biomarker-treatment response analysis, any rows missing the mutation status (BMMTR1) or the response status (RSRESP) were omitted. 
+
+For the demographic-adverse events analysis, rows with missing demographic information (AGE, SEX, RACE) or missing adverse event types (AEPT) were also discarded. This step was critical to ensure that the subsequent analyses were based on complete cases.
+
+Once cleaned, the datasets were subjected to exploratory data analysis. Demographic data revealed the composition of the patient population, including the distribution of ages, the gender ratio, and racial diversity. This information was visualized using bar plots and pie charts for immediate visual interpretation.
+
+In the barplot generated by `biomarker_barplot()`, each bar represents a different type of treatment response, and the length of the bar indicates the frequency of that response type within each biomarker mutation category. The “Failure” category represents cases where the biomarker test did not yield a conclusive result. 
+
+If the frequency is low across treatment responses, it suggests that failures are uncommon or the test is generally reliable. We can see that patients with the “Failure” status is low across every response. Subjects with the “Mutant” biomarker show varying levels of treatment response across all mutation statuses. It is also highest in partial response. The “Wild-type” category shows how often each treatment response occurred in subjects without the biomarker mutation. 
+
+This is the most frequent treatment response across all mutation statuses and is the highest in partial response. Distributions for the top ten adverse events by gender and race were also generated, showing that men tend to have slightly more accounts of these adverse effects than women. In the faceted distribution by race for the top 10 adverse effects, people belonging to the “White or Caucasian” group tended to have a lot more accounts of adverse effects than any other race. 
+
+# Analysis and Interpretation
+```{r}
+# Setup
+trial_path <- file.path("../data/datasphere")
+trial_files <- list.files(trial_path, pattern = "*_pds2019.sas7bdat")
+
+dl <- map(file.path(trial_path, trial_files), ~ read_sas(.x))
+names(dl) <- gsub("*_pds2019.sas7bdat", "", trial_files)
+
+adae <- dl$adae
+adrsp <- dl$adrsp
+adsl <- dl$adsl
+biomark <- dl$biomark
+
+#' Research Question 1:
+#' Is there a significant difference in the response to treatment between subjects
+#' with different biomarker mutations (e.g., KRAS, NRAS, BRAF)?
+
+biomark_df <- read.csv("../data/biomark.csv")
+adrsp_df <- read.csv("../data/adrsp.csv")
+
+# Merge the biomark and adrsp datas on 'SUBJID'
+biomark_adrsp_merged <- merge(biomark_df[, c('SUBJID', 'BMMTNM1', 'BMMTR1')],
+                              adrsp_df[, c('SUBJID', 'RSRESP')],
+                              by = 'SUBJID')
+
+# Drop rows with NA's in 'BMMTR1' or 'RSRESP'
+biomark_adrsp_cleaned <- na.omit(biomark_adrsp_merged)
+
+suppressWarnings(chisq_analysis(biomark_adrsp_cleaned, "RSRESP", "BMMTR1"))
+
+#' Research Question 2:
+#' Are there specific demographic factors (e.g., age, gender, race) that are
+#' associated with a higher incidence of adverse events during the treatment?
+
+# Read the datasets
+adsl_df <- read.csv('../data/adsl.csv')
+adae_df <- read.csv('../data/adae.csv')
+
+# Merging the adsl and adae datasets on 'SUBJID'
+adsl_adae_merged <- merge(adsl_df[, c('SUBJID', 'AGE', 'SEX', 'RACE')],
+                          adae_df[, c('SUBJID', 'AEPT')],
+                          by = 'SUBJID')
+
+# Dropping rows with missing values in 'AGE', 'SEX', 'RACE', or 'AEPT'
+adsl_adae_cleaned <- na.omit(adsl_adae_merged)
+```
+```{r, fig.width=12, fig.height=6}
+adverse_events_by_gender_top_10(adsl_adae_cleaned)
+```
+```{r, fig.width=12, fig.height=6}
+adverse_events_by_race_top_10(adsl_adae_cleaned)
+```
+```{r}
+suppressWarnings(demographic_analysis(adsl_adae_cleaned))
+```
+
+The Chi-squared test applied to the association between biomarker mutation status and treatment response yielded a Chi-square value of 329.85 with 8 degrees of freedom. The p-value is reported to be less than 2.2e-16, which is significantly below the standard alpha level of 0.05. 
+
+This indicates very strong evidence against the null hypothesis, meaning that there is a statistically significant association between biomarker mutation status and the treatment response in the study population. 
+
+The contingency table provided offers a detailed view of how the treatment responses are distributed across the three biomarker statuses (Failure, Mutant, Wild-type):
+
+- **Complete Response**: There were no complete responses in the Failure category, 34 in Mutant, and 276 in Wild-type. The percentage distribution shows that nearly 90% of complete responses were observed in patients with Wild-type biomarkers.
+
+- **Partial Response**: For partial responses, a small proportion (1.44%) was observed in the Failure category, with a larger share (69.52%) in the Wild-type. This suggests that patients with Wild-type biomarkers are more likely to have a partial response compared to other groups.
+
+- **Progressive Disease**: The distribution indicates that the Progressive disease is more frequent in the Mutant category (41.45%) than in the Wild-type (56.92%), which could suggest that patients with mutant biomarkers are more prone to disease progression.
+
+- **Stable Disease**: Stable disease occurrences were distributed relatively evenly between Mutant (48.07%) and Wild-type (50.75%), with only a small fraction in Failure.
+
+- **Unable to Evaluate**: This category did not apply to the Failure group and was more common in Wild-type (65.40%) compared to Mutant (34.60%).
+
+The distributions and percentages reveal a pattern in which the Wild-type biomarker status is more frequently associated with better treatment responses (Complete and Partial responses), whereas the Mutant status shows a higher tendency towards Progressive disease. The absence of responses in the 
+
+Failure category likely indicates that these cases had insufficient data for evaluation or that the biomarker tests were inconclusive. These findings suggest that biomarker status, particularly the presence or absence of certain mutations, plays a crucial role in determining the efficacy of treatment. Patients with Wild-type biomarkers generally experienced more favorable responses, while those with Mutant biomarkers had a higher incidence of disease progression.
+
+The Chi-squared test for the association between sex and adverse events yields a Chi-squared value of 13759 with 6148 degrees of freedom, and a p-value that is less than 2.2e-16, indicating an extremely strong statistical significance suggesting that the incidence of adverse events is associated with the sex of the patients. This association could be reflective of biological differences, such as hormonal influences, genetic factors, or other sex-specific factors.
+
+Similarly, the association between race and adverse events is also statistically significant, with a Chi-squared value of 1441.7 and 464 degrees of freedom. The p-value is again less than 2.2e-16, showing very strong significance. This result implies that there are differences in the incidence of adverse events among different racial groups. Such differences could be due to a variety of factors, including genetic predispositions, cultural or lifestyle factors, or disparities in healthcare access and treatment.
+
+These strong associations suggest that demographic factors are critical in understanding and predicting adverse events during cancer treatment. Sex and race appear to play significant roles in the risk and type of adverse events experienced by patients.
+
+
+# Conclusion
+
+Collectively, the analyses underscore the importance of considering a patient's biomarker status and demographic profile when tailoring cancer treatments. Our findings lend significant support to the precision medicine paradigm, which posits that treatment should be as individualized as the disease itself.
+
+However, it is important to note that the associations detected by the Chi-squared test do not imply causality. While they do suggest a correlation between the variables studied and treatment outcomes, further research is required to unravel the causal pathways. Additionally, the interpretation of these associations must be done in the context of the broader clinical picture, taking into account the multitude of factors that influence treatment response and adverse events.
+
+In conclusion, the insights gained from this study provide a compelling argument for the integration of molecular and demographic data into the clinical decision-making process. They highlight the potential for improved patient outcomes through personalized treatment approaches that are attuned to the individual characteristics of each patient. Future studies should focus on exploring the causal mechanisms behind the observed 
+
+---
